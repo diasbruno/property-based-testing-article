@@ -37,7 +37,9 @@ end
 
 class Bucket < Recipient
   def fill(cup)
-    @quantity += cup.quantity
+    q = @quantity + cup.quantity
+    Recipient.validate(@capacity, q)
+    @quantity = q
     self
   end
 
@@ -47,6 +49,48 @@ class Bucket < Recipient
 end
 
 class Cup < Recipient; end
+
+module RecipientShrinkable
+  def shrink
+    copy = new(@capacity, @quantity)
+    copy.capacity.shrink if @capacity.shrinkable?
+    copy.quantity.shrink if @quantity.shrinkable?
+    copy
+  end
+
+  def shrinkable?
+    @capacity.shrinkable? || @quantity.shrinkable?
+  end
+end
+
+class BucketGen < Bucket
+  include RecipientShrinkable
+end
+
+class CupGen < Cup
+  include RecipientShrinkable
+end
+
+def valid_recipient
+  capacity = range(1, 10)
+  guard(capacity > 0)
+  quantity = range(0, capacity)
+  [capacity, quantity]
+end
+
+def bucket
+  capacity = range(1, 10)
+  guard(capacity > 0)
+  quantity = range(0, capacity)
+  BucketGen.filled(capacity, quantity)
+end
+
+def cup
+  capacity = range(1, 10)
+  guard(capacity > 0)
+  quantity = range(0, capacity)
+  CupGen.filled(capacity, quantity)
+end
 
 RSpec.describe Recipient do
   describe 'instantiate' do
@@ -100,21 +144,20 @@ RSpec.describe Bucket do
 
   describe 'filling the bucket' do
     it 'should not overflow' do
-      # args are (capacity, quantity)
-      b = described_class.filled(rand, rand)
-      c = Cup.filled(rand, rand)
+      p = property_of do
+        b = bucket
+        c = cup
+        guard((c.quantity + b.quantity) <= b.capacity)
+        [b, c]
+      end
 
-      # if the cup is not empty, bucket must not be full
-      # there is the case where the cup is empty
-      if c.quantity > 0
-        expect(b.quantity).to be < b.capacity
-      else
+      p.check(1000) do |opts|
+        b, c = opts
+
+        b.fill(c)
+
         expect(b.quantity).to be <= b.capacity
       end
-      # cup must not overflow
-      expect(c.quantity).to be <= c.capacity
-      # filling the bucket must not overflow
-      expect(b.fill(c).quantity).to be <= b.capacity
     end
   end
 end
