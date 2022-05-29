@@ -70,6 +70,16 @@ RSpec.describe Bucket do
       b = described_class.filled(rand, rand)
       c = Cup.filled(rand, rand)
 
+      # if the cup is not empty, bucket must not be full
+      # there is the case where the cup is empty
+      if c.quantity > 0
+        expect(b.quantity).to be < b.capacity
+      else
+        expect(b.quantity).to be <= b.capacity
+      end
+      # cup must not overflow
+      expect(c.quantity).to be <= c.capacity
+      # filling the bucket must not overflow
       expect(b.fill(c).quantity).to be <= b.capacity
     end
   end
