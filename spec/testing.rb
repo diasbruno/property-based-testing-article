@@ -3,16 +3,31 @@
 require 'pry'
 require 'rantly/rspec_extensions'
 
+def assert(bool, msg)
+  raise StandardError, msg unless bool
+end
+
+CAPACITY_GREATER_THAN_ZERO = 'CAPACITY_GREATER_THAN_ZERO'
+QUATITY_BETWEEN_ZERO_AND_CAPACITY = 'QUATITY_BETWEEN_ZERO_AND_CAPACITY'
+
 class Recipient
-  attr_accessor :capacity, :quantity
+  def self.validate(capacity, quantity)
+    assert(capacity > 0, CAPACITY_GREATER_THAN_ZERO)
+    assert(quantity >= 0 && quantity <= capacity, QUATITY_BETWEEN_ZERO_AND_CAPACITY)
+
+    true
+  end
 
   def self.filled(capacity, quantity)
+    validate(capacity, quantity)
     new(capacity, quantity)
   end
 
   def self.empty(capacity)
     filled(capacity, 0)
   end
+
+  attr_accessor :capacity, :quantity
 
   def initialize(capacity, quantity)
     @capacity = capacity
@@ -32,6 +47,25 @@ class Bucket < Recipient
 end
 
 class Cup < Recipient; end
+
+RSpec.describe Recipient do
+  describe 'instantiate' do
+    it 'must fail for every case' do
+      p = property_of do
+        capacity = integer
+        quantity = integer
+        guard(capacity < 0 || quantity < 0 || quantity > capacity)
+        [capacity, quantity]
+      end
+      p.check do |opts|
+        capacity, quantity = opts
+        expect {
+          Recipient.filled(capacity, quantity)
+        }.to raise_error(StandardError)
+      end
+    end
+  end
+end
 
 RSpec.describe Cup do
   describe 'instantiation' do
