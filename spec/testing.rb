@@ -67,8 +67,8 @@ RSpec.describe Bucket do
   describe 'filling the bucket' do
     it 'should not overflow' do
       # args are (capacity, quantity)
-      b = described_class.filled(2, 0)
-      c = Cup.filled(2, 2)
+      b = described_class.filled(rand, rand)
+      c = Cup.filled(rand, rand)
 
       expect(b.fill(c).quantity).to be <= b.capacity
     end
