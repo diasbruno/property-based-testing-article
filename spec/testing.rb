@@ -63,4 +63,14 @@ RSpec.describe Bucket do
       end.not_to raise_exception
     end
   end
+
+  describe 'filling the bucket' do
+    it 'should not overflow' do
+      # args are (capacity, quantity)
+      b = described_class.filled(2, 0)
+      c = Cup.filled(2, 2)
+
+      expect(b.fill(c).quantity).to be <= b.capacity
+    end
+  end
 end
